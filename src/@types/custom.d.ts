@@ -3,6 +3,10 @@ declare namespace Express {
     user: {
       _id: string,
     },
+    admin: {
+      _id: string,
+    },
+    sessionId: string,
     access_token: string | null,
   }
 }

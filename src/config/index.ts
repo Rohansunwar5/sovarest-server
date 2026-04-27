@@ -24,7 +24,17 @@ const config = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET! as string,
   NOTIFY_TO: process.env.NOTIFY_TO! as string,
   JWT_CACHE_ENCRYPTION_KEY: process.env.JWT_CACHE_ENCRYPTION_KEY! as string,
+  ADMIN_JWT_SECRET: process.env.ADMIN_JWT_SECRET! as string,
   DEFAULT_COUNTRY_CODE: 'IN',
+
+  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID! as string,
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID! as string,
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY! as string,
+  R2_BUCKET_NAME: process.env.R2_BUCKET_NAME! as string,
+  R2_PUBLIC_URL: process.env.R2_PUBLIC_URL! as string,
+
+  LOW_STOCK_THRESHOLD: Number(process.env.LOW_STOCK_THRESHOLD) || 10,
+  GUEST_CART_TTL_SECONDS: Number(process.env.GUEST_CART_TTL_SECONDS) || 604800,
 };
 
 export default config;
