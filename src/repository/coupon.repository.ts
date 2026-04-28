@@ -1,4 +1,4 @@
-import couponModel, { ICoupon } from '../models/coupon.model';
+import couponModel from '../models/coupon.model';
 
 export interface ICreateCouponParams {
   code: string;

@@ -1,4 +1,4 @@
-import orderModel, { IOrder, IOrderItem, IShippingAddress, IBilling, IPayment, OrderStatus, ITrackingInfo } from '../models/order.model';
+import orderModel, { IOrderItem, IShippingAddress, IBilling, IPayment, OrderStatus, ITrackingInfo } from '../models/order.model';
 
 export interface ICreateOrderParams {
   orderId: string;

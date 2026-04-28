@@ -1,4 +1,4 @@
-import addressModel, { IAddress } from '../models/address.model';
+import addressModel from '../models/address.model';
 
 export interface ICreateAddressParams {
   userId: string;

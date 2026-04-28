@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import reviewModel, { IReview } from '../models/review.model';
+import reviewModel from '../models/review.model';
 
 export interface ICreateReviewParams {
   productId: string;
