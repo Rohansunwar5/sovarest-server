@@ -85,12 +85,16 @@ class AttributeService {
   }
 
   async resolveValueIds(filters: Record<string, string>): Promise<string[]> {
+    const entries = Object.entries(filters);
+    const attributes = await Promise.all(
+      entries.map(([attributeSlug]) => this._attributeRepository.findBySlug(attributeSlug)),
+    );
+
     const valueIds: string[] = [];
-
-    for (const [attributeSlug, valueSlug] of Object.entries(filters)) {
-      const attribute = await this._attributeRepository.findBySlug(attributeSlug);
+    for (let i = 0; i < entries.length; i++) {
+      const [, valueSlug] = entries[i];
+      const attribute = attributes[i];
       if (!attribute) continue;
-
       const value = attribute.values.find(v => v.slug === valueSlug && v.isActive);
       if (value) valueIds.push(value._id.toString());
     }

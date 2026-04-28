@@ -56,6 +56,14 @@ interface IGuestCartCacheParams {
   sessionId: string;
 }
 
+interface IRecentlyViewedUserParams {
+  userId: string;
+}
+
+interface IRecentlyViewedGuestParams {
+  sessionId: string;
+}
+
 export interface IGuestCartItem {
   variantId: string;
   productId: string;
@@ -92,6 +100,9 @@ const categoriesCacheManager = CacheManager<ICategoriesCacheParams, any>('catalo
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const attributesCacheManager = CacheManager<IAttributesCacheParams, any>('catalog-attributes', 3600);
 const guestCartCacheManager = CacheManager<IGuestCartCacheParams, IGuestCart>('cart-guest', 604800);
+// 30 days for users, 7 days for guests
+const recentlyViewedUserCacheManager = CacheManager<IRecentlyViewedUserParams, string[]>('recently-viewed-user', 2592000);
+const recentlyViewedGuestCacheManager = CacheManager<IRecentlyViewedGuestParams, string[]>('recently-viewed-guest', 604800);
 
 export {
   encodedJWTCacheManager,
@@ -105,4 +116,6 @@ export {
   categoriesCacheManager,
   attributesCacheManager,
   guestCartCacheManager,
+  recentlyViewedUserCacheManager,
+  recentlyViewedGuestCacheManager,
 };

@@ -15,6 +15,6 @@ export class UnauthorizedError extends CustomError {
 
 
   serializeErrors() {
-    return [{ message: 'Unauthorized' }];
+    return [{ message: this.reason }];
   }
 }

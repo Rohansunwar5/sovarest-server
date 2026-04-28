@@ -17,6 +17,17 @@ interface IAdminJWTPayload {
 class AdminAuthService {
   constructor(private readonly _adminRepository: AdminRepository) {}
 
+  async signup(params: { firstName: string; lastName?: string; email: string; password: string }) {
+    const exists = await this._adminRepository.emailExists(params.email);
+    if (exists) throw new BadRequestError('An admin with this email already exists');
+
+    const hashed = await bcrypt.hash(params.password, 10);
+    const admin = await this._adminRepository.create({ ...params, password: hashed });
+
+    const accessToken = await this._generateToken(admin._id.toString());
+    return { accessToken };
+  }
+
   async login(params: { email: string; password: string }) {
     const { email, password } = params;
 

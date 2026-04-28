@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BadRequestError } from '../../errors/bad-request.error';
 import { UnauthorizedError } from '../../errors/unauthorized.error';
 import adminAuthService from '../../services/admin.auth.service';
-import { decode, encryptionKey } from '../../services/crypto.service';
+import { decode, encode, encryptionKey } from '../../services/crypto.service';
 import config from '../../config';
 
 const verifyAdminToken = async (req: Request, _res: Response, next: NextFunction) => {
@@ -19,7 +19,7 @@ const verifyAdminToken = async (req: Request, _res: Response, next: NextFunction
     const cached = await adminAuthService.getCachedToken(adminId);
 
     if (!cached) {
-      await adminAuthService.setCachedToken(adminId, await (await import('../../services/crypto.service')).encode(token, key));
+      await adminAuthService.setCachedToken(adminId, await encode(token, key));
     } else {
       const decoded = await decode(cached, key);
       if (decoded !== token) throw new UnauthorizedError('Session expired');

@@ -24,6 +24,8 @@ const productVariantSchema = new mongoose.Schema(
     attributes: { type: [variantAttributeSchema], default: [] },
     variantKey: { type: String, required: true },
     isActive: { type: Boolean, default: true },
+    flashSalePrice: { type: Number, default: null },
+    flashSaleEndsAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
@@ -56,6 +58,8 @@ export interface IProductVariant extends mongoose.Document {
   attributes: IVariantAttribute[];
   variantKey: string;
   isActive: boolean;
+  flashSalePrice: number | null;
+  flashSaleEndsAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -6,6 +6,8 @@ import { ProductVariantRepository } from '../repository/productVariant.repositor
 import { ProductRepository } from '../repository/product.repository';
 import { guestCartCacheManager, IGuestCart, IGuestCartItem } from './cache/entities';
 import { ICartItem } from '../models/cart.model';
+import couponService from './coupon.service';
+import { getEffectivePrice } from '../utils/flash-sale.util';
 
 const MAX_QTY_PER_ITEM = 10;
 
@@ -47,8 +49,13 @@ class CartService {
   ) {}
 
   async getCart(actor: ICartActor): Promise<ICartResponse> {
-    const rawItems = await this._getRawItems(actor);
-    return this._buildResponse(actor.sessionId, rawItems, null);
+    if (actor.userId) {
+      const cart = await this._cartRepository.findByUserId(actor.userId);
+      const items = this._mongoItemsToDisplay(cart?.items ?? []);
+      return this._buildResponse(actor.sessionId, items, cart?.coupon ?? null);
+    }
+    const guestCart = await guestCartCacheManager.get({ sessionId: actor.sessionId });
+    return this._buildResponse(actor.sessionId, guestCart?.items ?? [], guestCart?.coupon ?? null);
   }
 
   async addItem(actor: ICartActor, variantId: string, qty: number): Promise<ICartResponse> {
@@ -62,6 +69,7 @@ class CartService {
     const product = await this._productRepository.findById(variant.product.toString());
     if (!product || !product.isActive) throw new NotFoundError('Product not found');
 
+    const effectivePrice = getEffectivePrice(variant);
     const newItem: IGuestCartItem = {
       variantId: variant._id.toString(),
       productId: product._id.toString(),
@@ -70,8 +78,8 @@ class CartService {
       sku: variant.sku,
       image: product.images[0] ?? '',
       attributeLabels: variant.attributes.map(a => a.valueLabel),
-      priceSnapshot: variant.price,
-      originalPriceSnapshot: variant.originalPrice,
+      priceSnapshot: effectivePrice.price,
+      originalPriceSnapshot: effectivePrice.originalPrice,
       qty,
     };
 
@@ -84,8 +92,8 @@ class CartService {
         sku: variant.sku,
         image: product.images[0] ?? '',
         attributeLabels: variant.attributes.map(a => a.valueLabel),
-        priceSnapshot: variant.price,
-        originalPriceSnapshot: variant.originalPrice,
+        priceSnapshot: effectivePrice.price,
+        originalPriceSnapshot: effectivePrice.originalPrice,
         qty,
       };
 
@@ -174,7 +182,14 @@ class CartService {
     const userCart = await this._cartRepository.findOrCreate(userId);
     const mergedItems: ICartItem[] = [...userCart.items];
 
+    const guestVariantIds = guestCart.items.map(i => i.variantId);
+    const liveVariants = await this._variantRepository.findByIds(guestVariantIds);
+    const liveVariantMap = new Map(liveVariants.map(v => [v._id.toString(), v]));
+
     for (const guestItem of guestCart.items) {
+      const liveVariant = liveVariantMap.get(guestItem.variantId);
+      if (!liveVariant || !liveVariant.isActive || liveVariant.stock < 1) continue;
+
       const existingIdx = mergedItems.findIndex(
         i => i.variantId.toString() === guestItem.variantId,
       );
@@ -185,6 +200,7 @@ class CartService {
           MAX_QTY_PER_ITEM,
         );
       } else {
+        const mergeEffectivePrice = getEffectivePrice(liveVariant);
         mergedItems.push({
           variantId: new mongoose.Types.ObjectId(guestItem.variantId),
           productId: new mongoose.Types.ObjectId(guestItem.productId),
@@ -193,17 +209,90 @@ class CartService {
           sku: guestItem.sku,
           image: guestItem.image,
           attributeLabels: guestItem.attributeLabels,
-          priceSnapshot: guestItem.priceSnapshot,
-          originalPriceSnapshot: guestItem.originalPriceSnapshot,
+          priceSnapshot: mergeEffectivePrice.price,
+          originalPriceSnapshot: mergeEffectivePrice.originalPrice,
           qty: guestItem.qty,
         });
       }
     }
 
-    const updated = await this._cartRepository.setItems(userId, mergedItems);
+    let finalCart = await this._cartRepository.setItems(userId, mergedItems);
     await guestCartCacheManager.remove({ sessionId });
 
-    return this._buildResponse(sessionId, this._mongoItemsToDisplay(updated?.items ?? []), updated?.coupon ?? null);
+    // Carry over guest coupon if user cart has none
+    if (guestCart.coupon && !userCart.coupon) {
+      try {
+        const mergedSubtotal = mergedItems.reduce((sum, i) => sum + i.priceSnapshot * i.qty, 0);
+        const { coupon, discountAmount } = await couponService.validateAndComputeDiscount({
+          code: guestCart.coupon.code,
+          cartSubtotal: mergedSubtotal,
+          cartItems: mergedItems.map(i => ({ productId: i.productId.toString() })),
+          userId,
+        });
+        finalCart = await this._cartRepository.setCoupon(userId, {
+          code: coupon.code,
+          discountAmount,
+          couponId: new mongoose.Types.ObjectId(coupon._id.toString()),
+        });
+      } catch {
+        // Coupon no longer valid — silently discard
+      }
+    }
+
+    return this._buildResponse(sessionId, this._mongoItemsToDisplay(finalCart?.items ?? []), finalCart?.coupon ?? null);
+  }
+
+  async applyCoupon(actor: ICartActor, code: string): Promise<ICartResponse> {
+    const rawItems = await this._getRawItems(actor);
+    if (!rawItems.length) throw new BadRequestError('Cannot apply coupon to an empty cart');
+
+    const subtotal = rawItems.reduce((sum, i) => sum + i.priceSnapshot * i.qty, 0);
+    const cartItemsForValidation = rawItems.map(i => ({ productId: i.productId }));
+
+    const { coupon, discountAmount } = await couponService.validateAndComputeDiscount({
+      code,
+      cartSubtotal: subtotal,
+      cartItems: cartItemsForValidation,
+      userId: actor.userId,
+    });
+
+    if (actor.userId) {
+      const updated = await this._cartRepository.setCoupon(actor.userId, {
+        code: coupon.code,
+        discountAmount,
+        couponId: new mongoose.Types.ObjectId(coupon._id.toString()),
+      });
+      return this._buildResponse(
+        actor.sessionId,
+        this._mongoItemsToDisplay(updated?.items ?? []),
+        updated?.coupon ?? null,
+      );
+    }
+
+    const guestCart = await this._getGuestCart(actor.sessionId);
+    guestCart.coupon = { code: coupon.code, discountAmount, couponId: coupon._id.toString() };
+    guestCart.updatedAt = new Date().toISOString();
+    await guestCartCacheManager.set({ sessionId: actor.sessionId }, guestCart);
+
+    return this._buildResponse(actor.sessionId, guestCart.items, guestCart.coupon);
+  }
+
+  async removeCoupon(actor: ICartActor): Promise<ICartResponse> {
+    if (actor.userId) {
+      const updated = await this._cartRepository.setCoupon(actor.userId, null);
+      return this._buildResponse(
+        actor.sessionId,
+        this._mongoItemsToDisplay(updated?.items ?? []),
+        null,
+      );
+    }
+
+    const guestCart = await this._getGuestCart(actor.sessionId);
+    guestCart.coupon = null;
+    guestCart.updatedAt = new Date().toISOString();
+    await guestCartCacheManager.set({ sessionId: actor.sessionId }, guestCart);
+
+    return this._buildResponse(actor.sessionId, guestCart.items, null);
   }
 
   private async _getRawItems(actor: ICartActor): Promise<IGuestCartItem[]> {
@@ -266,12 +355,8 @@ class CartService {
     const map = new Map<string, number>();
     if (!variantIds.length) return map;
 
-    await Promise.all(
-      variantIds.map(async id => {
-        const v = await this._variantRepository.findById(id);
-        if (v) map.set(id, v.price);
-      }),
-    );
+    const variants = await this._variantRepository.findByIds(variantIds);
+    for (const v of variants) map.set(v._id.toString(), v.price);
 
     return map;
   }

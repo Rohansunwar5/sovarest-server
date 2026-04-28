@@ -5,6 +5,7 @@ import getAuthMiddlewareByJWTSecret from '../middlewares/auth/verify-token.middl
 import isLoggedIn from '../middlewares/isLoggedIn.middleware';
 import cartSessionMiddleware from '../middlewares/cart-session.middleware';
 import { addItemValidator, updateItemQtyValidator } from '../middlewares/validators/cart.validator';
+import { applyCouponValidator } from '../middlewares/validators/coupon.validator';
 import {
   getCart,
   addItem,
@@ -13,6 +14,7 @@ import {
   clearCart,
   mergeGuestCart,
 } from '../controllers/cart.controller';
+import { applyCoupon, removeCoupon } from '../controllers/coupon.controller';
 
 const cartRouter = Router();
 
@@ -30,5 +32,9 @@ cartRouter.delete('/', asyncHandler(clearCart));
 
 // Merge requires a real logged-in user
 cartRouter.post('/merge', isLoggedIn, asyncHandler(mergeGuestCart));
+
+// Coupon
+cartRouter.post('/coupon', applyCouponValidator, asyncHandler(applyCoupon));
+cartRouter.delete('/coupon', asyncHandler(removeCoupon));
 
 export default cartRouter;

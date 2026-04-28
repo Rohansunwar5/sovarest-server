@@ -144,11 +144,15 @@ class ProductService {
     if (query.sort === 'price_asc') priceSortDirection = 1;
     else if (query.sort === 'price_desc') priceSortDirection = -1;
 
+    // For price sorting we must fetch all matches first, sort by price in-memory, then paginate.
+    // DB-level pagination before an in-memory sort would produce wrong results across pages.
+    const fetchAll = priceSortDirection !== null;
+
     const { docs, total } = await this._productRepository.findWithFilters({
       filter: { isActive: true, categoryId, productIds },
       sort: { field: sortField as 'rating' | 'createdAt', direction: sortDir as 1 | -1 },
-      skip,
-      limit,
+      skip: fetchAll ? 0 : skip,
+      limit: fetchAll ? 0 : limit,
     });
 
     const ids = docs.map(p => p._id.toString());
@@ -170,14 +174,16 @@ class ProductService {
     }));
 
     if (priceSortDirection !== null) {
-      products = products.sort((a, b) =>
+      products.sort((a, b) =>
         priceSortDirection === 1 ? a.minPrice - b.minPrice : b.minPrice - a.minPrice,
       );
+      products = products.slice(skip, skip + limit);
     }
 
+    const effectiveTotal = fetchAll ? docs.length : total;
     const result = {
       products,
-      pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+      pagination: { total: effectiveTotal, page, limit, pages: Math.ceil(effectiveTotal / limit) },
     };
 
     await productListCacheManager.set({ queryHash: cacheKey }, result);
@@ -268,6 +274,60 @@ class ProductService {
     return products;
   }
 
+  async searchProducts(query: string, page: number, limit: number) {
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(50, Math.max(1, limit));
+
+    if (!query?.trim()) return { products: [], pagination: { total: 0, page: safePage, limit: safeLimit, pages: 0 } };
+
+    const { docs, total } = await this._productRepository.search(query.trim(), safePage, safeLimit);
+
+    const ids = docs.map(p => p._id.toString());
+    const priceMaps = await this._variantRepository.getMinPriceByProductIds(ids);
+    const priceById = new Map(priceMaps.map(p => [p._id.toString(), p]));
+
+    const products = docs.map(p => ({
+      _id: p._id,
+      name: p.name,
+      slug: p.slug,
+      images: p.images,
+      badge: p.badge,
+      rating: p.rating,
+      totalReviews: p.totalReviews,
+      minPrice: priceById.get(p._id.toString())?.minPrice ?? 0,
+      originalMinPrice: priceById.get(p._id.toString())?.originalMinPrice ?? 0,
+    }));
+
+    return { products, pagination: { total, page: safePage, limit: safeLimit, pages: Math.ceil(total / safeLimit) } };
+  }
+
+  async getRelatedProducts(slug: string, limit = 6) {
+    const product = await this._productRepository.findBySlug(slug);
+    if (!product) return [];
+
+    const related = await this._productRepository.findRelated(
+      product._id.toString(),
+      product.category.toString(),
+      limit,
+    );
+
+    const ids = related.map(p => p._id.toString());
+    const priceMaps = await this._variantRepository.getMinPriceByProductIds(ids);
+    const priceById = new Map(priceMaps.map(p => [p._id.toString(), p]));
+
+    return related.map(p => ({
+      _id: p._id,
+      name: p.name,
+      slug: p.slug,
+      images: p.images,
+      badge: p.badge,
+      rating: p.rating,
+      totalReviews: p.totalReviews,
+      minPrice: priceById.get(p._id.toString())?.minPrice ?? 0,
+      originalMinPrice: priceById.get(p._id.toString())?.originalMinPrice ?? 0,
+    }));
+  }
+
   async softDeleteProduct(id: string) {
     const product = await this._productRepository.findById(id);
     if (!product) throw new NotFoundError('Product not found');
@@ -281,10 +341,7 @@ class ProductService {
   }
 
   private async _invalidateListCache() {
-    await Promise.all([
-      productListCacheManager.remove({ queryHash: 'featured' }),
-      productListCacheManager.remove({ queryHash: 'bestsellers' }),
-    ]);
+    await productListCacheManager.flush();
   }
 }
 

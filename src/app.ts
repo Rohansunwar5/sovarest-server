@@ -13,11 +13,15 @@ import { globalHandler } from './middlewares/error-handler.middleware';
 import rootRouter from './routes/v1.route';
 
 const app = express();
-app.set('trust proxy', true); // very important for rate-limiter to trust the x-forwarded-for headers
+app.set('trust proxy', 1); // very important for rate-limiter to trust the x-forwarded-for headers
 app.set('view engine', 'ejs');
 app.set('views', 'src/views');
 
-app.use(express.json({ limit: '8mb' }));
+app.use(express.json({
+  limit: '8mb',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  verify: (req: any, _res, buf) => { req.rawBody = buf; },
+}));
 app.use(cors());
 app.use(xss());
 app.use(helmet({

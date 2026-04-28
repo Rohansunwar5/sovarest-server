@@ -1,7 +1,7 @@
 import { CustomError } from './custom.error';
 
 export class ConflictErrorJSON extends CustomError {
-  statusCode = 401;
+  statusCode = 409;
 
   constructor() {
     super('Conflict Error');

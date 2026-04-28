@@ -138,6 +138,16 @@ export const getLowStockVariants = async (_req: Request, _res: Response, next: N
   next(response);
 };
 
+export const setFlashSale = async (req: Request, _res: Response, next: NextFunction) => {
+  const { id } = req.params;
+  const { flashSalePrice, flashSaleEndsAt } = req.body;
+  const params = flashSalePrice != null && flashSaleEndsAt != null
+    ? { flashSalePrice: Number(flashSalePrice), flashSaleEndsAt: new Date(flashSaleEndsAt) }
+    : null;
+  const response = await productVariantService.setFlashSale(id, params);
+  next(response);
+};
+
 // ── Image Upload ──────────────────────────────────────────────────────────────
 
 export const uploadImage = async (req: Request, _res: Response, next: NextFunction) => {

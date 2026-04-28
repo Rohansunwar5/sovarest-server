@@ -35,6 +35,10 @@ export class ProductVariantRepository {
     return this._model.findById(id);
   }
 
+  async findByIds(ids: string[]): Promise<IProductVariant[]> {
+    return this._model.find({ _id: { $in: ids } });
+  }
+
   async findByProductId(productId: string, onlyActive = true): Promise<IProductVariant[]> {
     const filter: Record<string, unknown> = { product: productId };
     if (onlyActive) filter.isActive = true;
@@ -63,11 +67,10 @@ export class ProductVariantRepository {
   }
 
   async adjustStock(id: string, delta: number): Promise<IProductVariant | null> {
-    return this._model.findByIdAndUpdate(
-      id,
-      { $inc: { stock: delta } },
-      { new: true },
-    );
+    const filter = delta < 0
+      ? { _id: id, stock: { $gte: Math.abs(delta) } }
+      : { _id: id };
+    return this._model.findOneAndUpdate(filter, { $inc: { stock: delta } }, { new: true });
   }
 
   async softDelete(id: string): Promise<IProductVariant | null> {
@@ -77,16 +80,35 @@ export class ProductVariantRepository {
   async getMinPriceByProductIds(
     productIds: string[],
   ): Promise<{ _id: string; minPrice: number; originalMinPrice: number }[]> {
+    const now = new Date();
     return this._model.aggregate([
       { $match: { product: { $in: productIds.map(id => new mongoose.Types.ObjectId(id)) }, isActive: true } },
       {
+        $addFields: {
+          effectivePrice: {
+            $cond: [
+              { $and: [
+                { $ne: ['$flashSalePrice', null] },
+                { $gt: ['$flashSaleEndsAt', now] },
+              ]},
+              '$flashSalePrice',
+              '$price',
+            ],
+          },
+        },
+      },
+      {
         $group: {
           _id: '$product',
-          minPrice: { $min: '$price' },
-          originalMinPrice: { $min: '$originalPrice' },
+          minPrice: { $min: '$effectivePrice' },
+          originalMinPrice: { $min: '$price' },
         },
       },
     ]);
+  }
+
+  async setFlashSale(id: string, flashSalePrice: number | null, flashSaleEndsAt: Date | null): Promise<IProductVariant | null> {
+    return this._model.findByIdAndUpdate(id, { flashSalePrice, flashSaleEndsAt }, { new: true });
   }
 
   async findDistinctProductIdsByFilters(params: {

@@ -35,6 +35,14 @@ const config = {
 
   LOW_STOCK_THRESHOLD: Number(process.env.LOW_STOCK_THRESHOLD) || 10,
   GUEST_CART_TTL_SECONDS: Number(process.env.GUEST_CART_TTL_SECONDS) || 604800,
+
+  RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID! as string,
+  RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET! as string,
+  RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET! as string,
+
+  FREE_SHIPPING_THRESHOLD: Number(process.env.FREE_SHIPPING_THRESHOLD) || 20000,
+  STANDARD_SHIPPING_CHARGE: Number(process.env.STANDARD_SHIPPING_CHARGE) || 499,
+  SHIPPING_TAX_RATE: 0.18,
 };
 
 export default config;

@@ -22,6 +22,7 @@ const MULTER_ALLOWED_FILE_EXTENSIONS_ALL = [
 ];
 
 export const upload = multer({
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1000 * 1000 },
   fileFilter: function (_req, file, callback) {
     const ext = path.extname(file.originalname);

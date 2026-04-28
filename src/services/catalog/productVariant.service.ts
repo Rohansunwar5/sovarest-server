@@ -186,6 +186,32 @@ class ProductVariantService {
     return updated;
   }
 
+  async setFlashSale(
+    id: string,
+    params: { flashSalePrice: number; flashSaleEndsAt: Date } | null,
+  ) {
+    const variant = await this._variantRepository.findById(id);
+    if (!variant) throw new NotFoundError('Variant not found');
+
+    if (params !== null) {
+      if (params.flashSalePrice >= variant.price)
+        throw new BadRequestError('Flash sale price must be less than the regular price');
+      if (params.flashSaleEndsAt <= new Date())
+        throw new BadRequestError('flashSaleEndsAt must be a future date');
+    }
+
+    const updated = await this._variantRepository.setFlashSale(
+      id,
+      params?.flashSalePrice ?? null,
+      params?.flashSaleEndsAt ?? null,
+    );
+
+    const product = await this._productRepository.findById(variant.product.toString());
+    if (product) await productDetailCacheManager.remove({ slug: product.slug });
+
+    return updated;
+  }
+
   async getLowStockVariants() {
     return this._variantRepository.getLowStock(config.LOW_STOCK_THRESHOLD);
   }

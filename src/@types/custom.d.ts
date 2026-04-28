@@ -8,5 +8,6 @@ declare namespace Express {
     },
     sessionId: string,
     access_token: string | null,
+    rawBody?: Buffer,
   }
 }

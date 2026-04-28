@@ -32,6 +32,10 @@ productSchema.index({ category: 1, isActive: 1 });
 productSchema.index({ isActive: 1, isFeatured: 1 });
 productSchema.index({ isActive: 1, rating: -1 });
 productSchema.index({ isActive: 1, createdAt: -1 });
+productSchema.index(
+  { name: 'text', description: 'text', details: 'text' },
+  { weights: { name: 10, description: 3, details: 1 }, name: 'product_text_search' },
+);
 
 export interface IProductBadge {
   label: string;

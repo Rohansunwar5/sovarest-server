@@ -98,3 +98,13 @@ export const adjustStockValidator = [
     .withMessage('delta must be a number'),
   ...validateRequest,
 ];
+
+export const flashSaleValidator = [
+  check('flashSalePrice')
+    .optional({ nullable: true })
+    .isFloat({ min: 0 }).withMessage('flashSalePrice must be a non-negative number'),
+  check('flashSaleEndsAt')
+    .optional({ nullable: true })
+    .isISO8601().withMessage('flashSaleEndsAt must be a valid ISO 8601 date'),
+  ...validateRequest,
+];

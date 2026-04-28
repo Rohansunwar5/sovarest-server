@@ -25,6 +25,7 @@ import {
   deleteVariant,
   getLowStockVariants,
   uploadImage,
+  setFlashSale,
 } from '../controllers/admin.catalog.controller';
 import {
   createAttributeValidator,
@@ -38,7 +39,25 @@ import {
   bulkCreateVariantsValidator,
   updateVariantValidator,
   adjustStockValidator,
+  flashSaleValidator,
 } from '../middlewares/validators/catalog.validator';
+import {
+  createCoupon,
+  updateCoupon,
+  listCoupons,
+  getCoupon,
+  deactivateCoupon,
+} from '../controllers/admin.coupon.controller';
+import { createCouponValidator, updateCouponValidator } from '../middlewares/validators/coupon.validator';
+import {
+  adminListOrders,
+  adminGetOrder,
+  adminUpdateOrderStatus,
+  adminInitiateRefund,
+} from '../controllers/admin.order.controller';
+import { adminUpdateOrderStatusValidator } from '../middlewares/validators/checkout.validator';
+import { deleteReview } from '../controllers/admin.review.controller';
+import { getRevenue, getTopProducts, getOrdersByStatus } from '../controllers/admin.analytics.controller';
 
 const adminRouter = Router();
 
@@ -78,7 +97,30 @@ adminRouter.patch('/variants/:id', updateVariantValidator, asyncHandler(updateVa
 adminRouter.patch('/variants/:id/stock', adjustStockValidator, asyncHandler(adjustVariantStock));
 adminRouter.delete('/variants/:id', asyncHandler(deleteVariant));
 
+adminRouter.patch('/variants/:id/flash-sale', flashSaleValidator, asyncHandler(setFlashSale));
+
 // ── Inventory ─────────────────────────────────────────────────────────────────
 adminRouter.get('/inventory/low-stock', asyncHandler(getLowStockVariants));
+
+// ── Coupons ──────────────────────────────────────────────────────────────────
+adminRouter.get('/coupons', asyncHandler(listCoupons));
+adminRouter.post('/coupons', createCouponValidator, asyncHandler(createCoupon));
+adminRouter.get('/coupons/:id', asyncHandler(getCoupon));
+adminRouter.patch('/coupons/:id', updateCouponValidator, asyncHandler(updateCoupon));
+adminRouter.delete('/coupons/:id', asyncHandler(deactivateCoupon));
+
+// ── Orders ────────────────────────────────────────────────────────────────────
+adminRouter.get('/orders', asyncHandler(adminListOrders));
+adminRouter.get('/orders/:orderId', asyncHandler(adminGetOrder));
+adminRouter.patch('/orders/:orderId/status', adminUpdateOrderStatusValidator, asyncHandler(adminUpdateOrderStatus));
+adminRouter.post('/orders/:orderId/refund', asyncHandler(adminInitiateRefund));
+
+// ── Reviews ───────────────────────────────────────────────────────────────────
+adminRouter.delete('/reviews/:id', asyncHandler(deleteReview));
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+adminRouter.get('/analytics/revenue', asyncHandler(getRevenue));
+adminRouter.get('/analytics/top-products', asyncHandler(getTopProducts));
+adminRouter.get('/analytics/orders-by-status', asyncHandler(getOrdersByStatus));
 
 export default adminRouter;

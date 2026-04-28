@@ -44,6 +44,10 @@ export class ProductRepository {
     return this._model.findOne({ slug });
   }
 
+  async findByIds(ids: string[]) {
+    return this._model.find({ _id: { $in: ids } });
+  }
+
   async findWithFilters(params: {
     filter: IProductFilter;
     sort: IProductSort;
@@ -88,6 +92,28 @@ export class ProductRepository {
 
   async softDelete(id: string): Promise<IProduct | null> {
     return this._model.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  }
+
+  async search(query: string, page: number, limit: number): Promise<{ docs: IProduct[]; total: number }> {
+    const skip = (page - 1) * limit;
+    const filter = { $text: { $search: query }, isActive: true };
+    const projection = { score: { $meta: 'textScore' } };
+    const [docs, total] = await Promise.all([
+      this._model
+        .find(filter, projection)
+        .sort({ score: { $meta: 'textScore' } })
+        .skip(skip)
+        .limit(limit),
+      this._model.countDocuments(filter),
+    ]);
+    return { docs, total };
+  }
+
+  async findRelated(productId: string, categoryId: string, limit: number): Promise<IProduct[]> {
+    return this._model
+      .find({ category: categoryId, isActive: true, _id: { $ne: productId } })
+      .sort({ rating: -1 })
+      .limit(limit);
   }
 
   async slugExists(slug: string): Promise<boolean> {

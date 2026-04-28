@@ -33,6 +33,13 @@ class MailService {
     return {};
   }
 
+  async sendOrderConfirmationEmail(
+    toEmail: string,
+    data: { orderId: string; total: number; items: unknown[] },
+  ) {
+    return this.sendEmail(toEmail, 'order-confirmation.ejs', data, `Order Confirmed — ${data.orderId}`);
+  }
+
 }
 
 export default new MailService();

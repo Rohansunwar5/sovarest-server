@@ -24,6 +24,7 @@ function CacheManager<T, J = unknown>(prefix: string, duration: number) { // dur
   const generateKey = (prefix: string, values: T) => {
     return `${config.SERVER_NAME}_${prefix}_${Object.values(values as unknown as Record<string, string>).sort().join('_')}`;
   };
+  const keyPattern = `${config.SERVER_NAME}_${prefix}_*`;
   return {
     get: async (values: T): Promise<J> => {
       const key = generateKey(prefix, values);
@@ -37,6 +38,14 @@ function CacheManager<T, J = unknown>(prefix: string, duration: number) { // dur
     remove: async (keys: T) => {
       const key = generateKey(prefix, keys);
       await redisClient.del(key);
+    },
+    flush: async () => {
+      let cursor = 0;
+      do {
+        const reply = await redisClient.scan(cursor, { MATCH: keyPattern, COUNT: 100 });
+        cursor = reply.cursor;
+        if (reply.keys.length) await redisClient.del(reply.keys);
+      } while (cursor !== 0);
     },
     setNx: async (keys: T, data: unknown) => {
       const key = generateKey(prefix, keys);
