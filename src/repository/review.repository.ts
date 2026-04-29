@@ -43,6 +43,21 @@ export class ReviewRepository {
     return this._model.findByIdAndUpdate(id, { isVisible: false }, { new: true });
   }
 
+  async findAllAdmin(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const [docs, total] = await Promise.all([
+      this._model
+        .find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('productId', 'name slug')
+        .populate('userId', 'firstName lastName email'),
+      this._model.countDocuments(),
+    ]);
+    return { docs, total };
+  }
+
   async computeProductRating(productId: string): Promise<{ avgRating: number; count: number }> {
     const result = await this._model.aggregate([
       { $match: { productId: new mongoose.Types.ObjectId(productId), isVisible: true } },

@@ -38,4 +38,8 @@ export class AdminRepository {
     const doc = await this._model.findOne({ email: email.toLowerCase() }).select('_id');
     return !!doc;
   }
+
+  async count(): Promise<number> {
+    return this._model.countDocuments();
+  }
 }

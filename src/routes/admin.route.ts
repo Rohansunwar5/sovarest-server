@@ -56,7 +56,7 @@ import {
   adminInitiateRefund,
 } from '../controllers/admin.order.controller';
 import { adminUpdateOrderStatusValidator } from '../middlewares/validators/checkout.validator';
-import { deleteReview } from '../controllers/admin.review.controller';
+import { listReviewsAdmin, deleteReview } from '../controllers/admin.review.controller';
 import { getRevenue, getTopProducts, getOrdersByStatus } from '../controllers/admin.analytics.controller';
 
 const adminRouter = Router();
@@ -116,6 +116,7 @@ adminRouter.patch('/orders/:orderId/status', adminUpdateOrderStatusValidator, as
 adminRouter.post('/orders/:orderId/refund', asyncHandler(adminInitiateRefund));
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
+adminRouter.get('/reviews', asyncHandler(listReviewsAdmin));
 adminRouter.delete('/reviews/:id', asyncHandler(deleteReview));
 
 // ── Analytics ─────────────────────────────────────────────────────────────────

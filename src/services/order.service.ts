@@ -17,7 +17,7 @@ class OrderService {
     private readonly _variantRepository: ProductVariantRepository,
     private readonly _cartRepository: CartRepository,
     private readonly _couponUsageRepository: CouponUsageRepository,
-  ) {}
+  ) { }
 
   async processWebhook(rawBody: Buffer, signature: string, payload: Record<string, unknown>) {
     const valid = verifyWebhookSignature(rawBody, signature);
@@ -150,7 +150,7 @@ class OrderService {
   }) {
     const page = Math.max(1, Number(filter.page) || 1);
     const limit = Math.min(50, Math.max(1, Number(filter.limit) || 20));
-    return this._orderRepository.findAllAdmin(
+    const { docs, total } = await this._orderRepository.findAllAdmin(
       {
         status: filter.status,
         dateFrom: filter.dateFrom ? new Date(filter.dateFrom) : undefined,
@@ -159,6 +159,10 @@ class OrderService {
       page,
       limit,
     );
+    return {
+      orders: docs,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+    };
   }
 
   async adminGetOrder(orderId: string) {
@@ -177,13 +181,13 @@ class OrderService {
     if (!order) throw new NotFoundError('Order not found');
 
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-      pending:    ['confirmed', 'cancelled'],
-      confirmed:  ['processing', 'cancelled'],
+      pending: ['confirmed', 'cancelled'],
+      confirmed: ['processing', 'cancelled'],
       processing: ['shipped'],
-      shipped:    ['delivered'],
-      delivered:  ['refunded'],
-      cancelled:  [],
-      refunded:   [],
+      shipped: ['delivered'],
+      delivered: ['refunded'],
+      cancelled: [],
+      refunded: [],
     };
 
     if (!validTransitions[order.status].includes(status))

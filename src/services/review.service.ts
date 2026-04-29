@@ -60,6 +60,16 @@ class ReviewService {
     return review;
   }
 
+  async adminListReviews(page: number, limit: number) {
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(50, Math.max(1, limit));
+    const { docs, total } = await this._reviewRepository.findAllAdmin(safePage, safeLimit);
+    return {
+      reviews: docs,
+      pagination: { total, page: safePage, limit: safeLimit, pages: Math.ceil(total / safeLimit) },
+    };
+  }
+
   async adminDeleteReview(reviewId: string) {
     const review = await this._reviewRepository.findById(reviewId);
     if (!review) throw new NotFoundError('Review not found');

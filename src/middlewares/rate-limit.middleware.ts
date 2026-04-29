@@ -9,6 +9,7 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: rateLimitResponse,
+  validate: { trustProxy: false },
 });
 
 // Auth actions (login, signup, SSO): 20 req / 15 min per IP
@@ -18,6 +19,7 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: rateLimitResponse,
+  validate: { trustProxy: false },
 });
 
 // Sensitive auth (password reset, OTP, account deletion): 5 req / 15 min per IP
@@ -27,4 +29,5 @@ export const strictLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: rateLimitResponse,
+  validate: { trustProxy: false },
 });
