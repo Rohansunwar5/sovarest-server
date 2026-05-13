@@ -75,8 +75,8 @@ export const createProduct = async (req: Request, _res: Response, next: NextFunc
 
 export const updateProduct = async (req: Request, _res: Response, next: NextFunction) => {
   const { id } = req.params;
-  const { name, description, details, materials, shipping, images, badge, isFeatured, isActive } = req.body;
-  const response = await productService.updateProduct(id, { name, description, details, materials, shipping, images, badge, isFeatured, isActive });
+  const { name, description, details, materials, shipping, images, badge, isFeatured, isActive, rating, totalReviews, totalPurchases } = req.body;
+  const response = await productService.updateProduct(id, { name, description, details, materials, shipping, images, badge, isFeatured, isActive, rating, totalReviews, totalPurchases });
   next(response);
 };
 

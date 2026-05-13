@@ -1,6 +1,6 @@
 import { BadRequestError } from '../../errors/bad-request.error';
 import { NotFoundError } from '../../errors/not-found.error';
-import { ProductRepository, ICreateProductParams } from '../../repository/product.repository';
+import { ProductRepository, ICreateProductParams, IUpdateProductParams } from '../../repository/product.repository';
 import { ProductVariantRepository } from '../../repository/productVariant.repository';
 import { CategoryRepository } from '../../repository/category.repository';
 import { productDetailCacheManager, productListCacheManager } from '../cache/entities';
@@ -62,20 +62,7 @@ class ProductService {
     return product;
   }
 
-  async updateProduct(
-    id: string,
-    params: {
-      name?: string;
-      description?: string;
-      details?: string;
-      materials?: string;
-      shipping?: string;
-      images?: string[];
-      badge?: { label: string; variant: 'primary' | 'accent' } | null;
-      isFeatured?: boolean;
-      isActive?: boolean;
-    },
-  ) {
+  async updateProduct(id: string, params: IUpdateProductParams) {
     const product = await this._productRepository.findById(id);
     if (!product) throw new NotFoundError('Product not found');
 

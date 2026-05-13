@@ -33,7 +33,7 @@ class ReviewService {
   async createReview(
     userId: string,
     productSlug: string,
-    params: { rating: number; title: string; body?: string },
+    params: { rating: number; title: string; body?: string; images?: string[] },
   ) {
     const product = await this._productRepository.findBySlug(productSlug);
     if (!product) throw new NotFoundError('Product not found');
@@ -57,6 +57,23 @@ class ReviewService {
     });
 
     await this._recomputeRating(productId);
+    return review;
+  }
+
+  async adminCreateReview(params: {
+    productId: string;
+    reviewerName: string;
+    userId?: string;
+    rating: number;
+    title: string;
+    body?: string;
+    images?: string[];
+  }) {
+    const product = await this._productRepository.findById(params.productId);
+    if (!product) throw new NotFoundError('Product not found');
+
+    const review = await this._reviewRepository.adminCreate(params);
+    await this._recomputeRating(params.productId);
     return review;
   }
 

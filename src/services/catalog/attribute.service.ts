@@ -1,12 +1,16 @@
 import { BadRequestError } from '../../errors/bad-request.error';
 import { NotFoundError } from '../../errors/not-found.error';
 import { AttributeRepository, IAddAttributeValueParams } from '../../repository/attribute.repository';
+import { CategoryRepository } from '../../repository/category.repository';
 import { attributesCacheManager } from '../cache/entities';
 
 const slugify = (text: string) => text.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
 class AttributeService {
-  constructor(private readonly _attributeRepository: AttributeRepository) {}
+  constructor(
+    private readonly _attributeRepository: AttributeRepository,
+    private readonly _categoryRepository: CategoryRepository,
+  ) {}
 
   async createAttribute(params: { name: string; slug?: string; unit?: string }) {
     const { name, unit } = params;
@@ -69,13 +73,37 @@ class AttributeService {
     return updated;
   }
 
-  async listAttributes() {
+  async listAttributes(categorySlug?: string) {
+    if (categorySlug) return this._listByCategory(categorySlug);
+
     const cached = await attributesCacheManager.get({ categoryId: 'all' });
     if (cached) return cached;
 
     const attributes = await this._attributeRepository.findAll(true);
     await attributesCacheManager.set({ categoryId: 'all' }, attributes);
     return attributes;
+  }
+
+  private async _listByCategory(categorySlug: string) {
+    const cached = await attributesCacheManager.get({ categoryId: categorySlug });
+    if (cached) return cached;
+
+    const category = await this._categoryRepository.findBySlug(categorySlug);
+
+    // No attributes configured for this category — fall back to all attributes
+    if (!category || !category.attributes?.length) {
+      return this._attributeRepository.findAll(true);
+    }
+
+    const sorted = [...category.attributes].sort((a, b) => a.displayOrder - b.displayOrder);
+    const ids = sorted.map(a => a.attributeId.toString());
+    const attrs = await this._attributeRepository.findByIds(ids);
+
+    // Preserve the category's display order
+    const ordered = ids.map(id => attrs.find(a => a._id.toString() === id)).filter(Boolean);
+
+    await attributesCacheManager.set({ categoryId: categorySlug }, ordered);
+    return ordered;
   }
 
   async getAttributeById(id: string) {
@@ -103,4 +131,4 @@ class AttributeService {
   }
 }
 
-export default new AttributeService(new AttributeRepository());
+export default new AttributeService(new AttributeRepository(), new CategoryRepository());

@@ -21,6 +21,7 @@ const productSchema = new mongoose.Schema(
     badge: { type: badgeSchema, default: null },
     rating: { type: Number, default: 0, min: 0, max: 5 },
     totalReviews: { type: Number, default: 0, min: 0 },
+    totalPurchases: { type: Number, default: 0, min: 0 },
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
   },
@@ -55,6 +56,7 @@ export interface IProduct extends mongoose.Document {
   badge: IProductBadge | null;
   rating: number;
   totalReviews: number;
+  totalPurchases: number;
   isActive: boolean;
   isFeatured: boolean;
   createdAt: Date;

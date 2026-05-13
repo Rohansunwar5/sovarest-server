@@ -14,10 +14,12 @@ import {
   getRelatedProducts,
   trackRecentlyViewed,
   getRecentlyViewed,
+  uploadReviewImage,
 } from '../controllers/catalog.controller';
 import { listReviews, createReview } from '../controllers/review.controller';
 import { createReviewValidator } from '../middlewares/validators/review.validator';
 import isLoggedIn from '../middlewares/isLoggedIn.middleware';
+import { upload } from '../utils/multer.util';
 
 const catalogRouter = Router();
 
@@ -44,5 +46,6 @@ catalogRouter.get('/recently-viewed', tryAuth, cartSessionMiddleware, asyncHandl
 // ── Reviews ───────────────────────────────────────────────────────────────────
 catalogRouter.get('/products/:slug/reviews', asyncHandler(listReviews));
 catalogRouter.post('/products/:slug/reviews', isLoggedIn, createReviewValidator, asyncHandler(createReview));
+catalogRouter.post('/reviews/upload-image', isLoggedIn, upload.single('file'), asyncHandler(uploadReviewImage));
 
 export default catalogRouter;

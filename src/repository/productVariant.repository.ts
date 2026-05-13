@@ -101,7 +101,7 @@ export class ProductVariantRepository {
         $group: {
           _id: '$product',
           minPrice: { $min: '$effectivePrice' },
-          originalMinPrice: { $min: '$price' },
+          originalMinPrice: { $min: '$originalPrice' },
         },
       },
     ]);

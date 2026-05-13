@@ -10,11 +10,25 @@ export interface ICreateReviewParams {
   body?: string;
 }
 
+export interface IAdminCreateReviewParams {
+  productId: string;
+  reviewerName: string;
+  userId?: string;
+  rating: number;
+  title: string;
+  body?: string;
+  images?: string[];
+}
+
 export class ReviewRepository {
   private _model = reviewModel;
 
   async create(params: ICreateReviewParams) {
     return this._model.create(params);
+  }
+
+  async adminCreate(params: IAdminCreateReviewParams) {
+    return this._model.create({ ...params, isAdminCreated: true });
   }
 
   async findById(id: string) {
