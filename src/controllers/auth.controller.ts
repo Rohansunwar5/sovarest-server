@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import authService from '../services/auth.service';
-import uploadService from '../services/upload.service';
+import { uploadToR2 } from '../utils/r2.util';
 
 export const genericLogin = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
@@ -34,9 +34,8 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
 export const uploadProfileImage = async (req: Request, res: Response, next: NextFunction) => {
   const { _id } = req.user;
   const file = req.file as Express.Multer.File;
-  const bucket = 'uploads/profile';
-  const { fileName } = await uploadService.uploadToS3(file, bucket, _id);
-  const response = await authService.updateProfileImage(_id, fileName);
+  const url = await uploadToR2(file.buffer, 'uploads/profile', file.mimetype);
+  const response = await authService.updateProfileImage(_id, url);
 
   next(response);
 };
@@ -98,4 +97,3 @@ export const deleteAccount = async (req: Request, res: Response, next: NextFunct
 
   next(response);
 };
-

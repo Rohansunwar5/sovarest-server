@@ -26,5 +26,6 @@ export const getCoupon = async (req: Request, _res: Response, next: NextFunction
 export const deactivateCoupon = async (req: Request, _res: Response, next: NextFunction) => {
   const { id } = req.params;
   const response = await couponService.deactivateCoupon(id);
+
   next(response);
 };

@@ -130,7 +130,7 @@ class ProductVariantService {
     const created = toCreate.length ? await this._variantRepository.bulkCreate(toCreate) : [];
     await productDetailCacheManager.remove({ slug: product.slug });
 
-    return { created: created.length, skipped };
+    return { variants: created, skipped };
   }
 
   async updateVariant(

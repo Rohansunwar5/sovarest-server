@@ -7,6 +7,7 @@ export interface IReview extends mongoose.Document {
   rating: number;
   title: string;
   body: string;
+  images: string[];
   isVisible: boolean;
 }
 
@@ -18,6 +19,7 @@ const reviewSchema = new mongoose.Schema<IReview>(
     rating: { type: Number, required: true, min: 1, max: 5 },
     title: { type: String, required: true, trim: true, maxlength: 120 },
     body: { type: String, default: '', maxlength: 2000 },
+    images: { type: [String], default: [] },
     isVisible: { type: Boolean, default: true },
   },
   { timestamps: true },

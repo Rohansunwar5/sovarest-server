@@ -10,6 +10,10 @@ const MULTER_ALLOWED_FILE_EXTENSIONS = [
   'JPEG',
   'gif',
   'GIF',
+  'webp',
+  'WEBP',
+  'avif',
+  'AVIF',
 ];
 
 const MULTER_ALLOWED_FILE_EXTENSIONS_ALL = [

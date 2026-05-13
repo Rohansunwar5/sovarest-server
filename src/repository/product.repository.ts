@@ -13,6 +13,13 @@ export interface ICreateProductParams {
   isFeatured?: boolean;
 }
 
+export interface IUpdateProductParams extends Partial<ICreateProductParams> {
+  isActive?: boolean;
+  rating?: number;
+  totalReviews?: number;
+  totalPurchases?: number;
+}
+
 export interface IProductFilter {
   categoryId?: string;
   productIds?: string[];
@@ -74,7 +81,7 @@ export class ProductRepository {
     return { docs, total };
   }
 
-  async update(id: string, params: Partial<ICreateProductParams>): Promise<IProduct | null> {
+  async update(id: string, params: IUpdateProductParams): Promise<IProduct | null> {
     return this._model.findByIdAndUpdate(id, params, { new: true });
   }
 

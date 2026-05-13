@@ -11,5 +11,11 @@ export const createReviewValidator = [
   check('body')
     .optional()
     .isLength({ max: 2000 }).withMessage('Review body must be 2000 characters or fewer'),
+  check('images')
+    .optional()
+    .isArray({ max: 5 }).withMessage('You can upload up to 5 images'),
+  check('images.*')
+    .optional()
+    .isURL().withMessage('Each image must be a valid URL'),
   ...validateRequest,
 ];

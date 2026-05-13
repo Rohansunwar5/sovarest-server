@@ -33,7 +33,7 @@ class ReviewService {
   async createReview(
     userId: string,
     productSlug: string,
-    params: { rating: number; title: string; body?: string },
+    params: { rating: number; title: string; body?: string; images?: string[] },
   ) {
     const product = await this._productRepository.findBySlug(productSlug);
     if (!product) throw new NotFoundError('Product not found');
