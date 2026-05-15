@@ -12,3 +12,17 @@ export const deleteReview = async (req: Request, _res: Response, next: NextFunct
   const response = await reviewService.adminDeleteReview(req.params.id);
   next(response);
 };
+
+export const createReviewAdmin = async (req: Request, _res: Response, next: NextFunction) => {
+  const { productId, reviewerName, userId, rating, title, body, images } = req.body;
+  const response = await reviewService.adminCreateReview({
+    productId,
+    reviewerName,
+    userId: userId || undefined,
+    rating: Number(rating),
+    title,
+    body,
+    images,
+  });
+  next(response);
+};

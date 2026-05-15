@@ -56,7 +56,8 @@ import {
   adminInitiateRefund,
 } from '../controllers/admin.order.controller';
 import { adminUpdateOrderStatusValidator } from '../middlewares/validators/checkout.validator';
-import { listReviewsAdmin, deleteReview } from '../controllers/admin.review.controller';
+import { listReviewsAdmin, deleteReview, createReviewAdmin } from '../controllers/admin.review.controller';
+import { createAdminReviewValidator } from '../middlewares/validators/review.validator';
 import { getRevenue, getTopProducts, getOrdersByStatus } from '../controllers/admin.analytics.controller';
 
 const adminRouter = Router();
@@ -117,6 +118,7 @@ adminRouter.post('/orders/:orderId/refund', asyncHandler(adminInitiateRefund));
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
 adminRouter.get('/reviews', asyncHandler(listReviewsAdmin));
+adminRouter.post('/reviews', createAdminReviewValidator, asyncHandler(createReviewAdmin));
 adminRouter.delete('/reviews/:id', asyncHandler(deleteReview));
 
 // ── Analytics ─────────────────────────────────────────────────────────────────

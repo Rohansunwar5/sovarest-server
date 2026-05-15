@@ -153,7 +153,7 @@ export const setFlashSale = async (req: Request, _res: Response, next: NextFunct
 export const uploadImage = async (req: Request, _res: Response, next: NextFunction) => {
   const file = req.file as Express.Multer.File;
   const { folder } = req.body;
-  const allowedFolders = ['products', 'categories', 'variants'];
+  const allowedFolders = ['products', 'categories', 'variants', 'reviews'];
   const targetFolder = allowedFolders.includes(folder) ? folder : 'products';
 
   const url = await uploadToR2(file.buffer, targetFolder, file.mimetype);
